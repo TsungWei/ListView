@@ -5,9 +5,13 @@ define(['dojo/_base/declare',
 'dgrid/OnDemandList',//dojo物件
 'dgrid/Selection',//dojo物件
 "dojo/store/Memory",
-"esri/tasks/query"],
+"esri/tasks/query",
+"esri/tasks/query",
+"esri/symbols/SimpleMarkerSymbol",
+"esri/symbols/SimpleLineSymbol",
+"esri/symbols/SimpleFillSymbol"],
 function(declare, BaseWidget,lang, Deferred,
-  OnDemandList, Selection, Memory,Query) {
+  OnDemandList, Selection, Memory,Query, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol) {
   //To create a widget, you need to derive from BaseWidget.
   return declare([BaseWidget], {
     // DemoWidget code goes here
@@ -20,6 +24,25 @@ function(declare, BaseWidget,lang, Deferred,
     postCreate: function() {
       this.inherited(arguments);
       this.headerNode.innerHTML = this.config.widgetHeaderText;
+      this.featureLayer = this.map.getLayer(this.config.layerId);
+      
+      //設定list row選取後，圖面上圖徵highlightSymbol
+      var highlightSymbol;
+      switch(this.featureLayer.geometryType) {
+        case 'esriGeometryPoint':
+        highlightSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 20, null, '#e74c3c');
+        break;
+        case 'esriGeometryPolyline':
+        highlightSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, '#e74c3c', 3);
+        break;
+        case 'esriGeometryPolygon':
+        highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+          new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, '#fff', 2),
+          '#e74c3c');
+        break;
+      }
+      this.featureLayer.setSelectionSymbol(highlightSymbol);
+
       //載入List
       this.createList();
       console.log('postCreate');
@@ -62,7 +85,7 @@ function(declare, BaseWidget,lang, Deferred,
     getDataStore: function() {
       var def = new Deferred();
       var layer = this.map.getLayer(this.config.layerId);
-      this.featureLayer=layer;
+
       // Query features
       var query = new Query();
       query.returnGeometry = false;
@@ -100,6 +123,29 @@ function(declare, BaseWidget,lang, Deferred,
           })
         }, this.ListNode);
         list.startup();
+        
+        //加入list row click事件
+        list.on('.dgrid-row:click', lang.hitch(this, function(evt) {
+           var row = list.row(evt);
+          var query = new Query();
+          query.objectIds = [row.data.id];
+          this.featureLayer.selectFeatures(query, esri.layers.FeatureLayer.SELECTION_NEW, lang.hitch(this, function(result) {
+            if (result.length) {
+              var feature = result[0],
+              newMapCenter,
+              geometry = feature.geometry,
+              extent = geometry.getExtent(),
+              shape = feature.getShape();
+              if(extent && extent.getCenter) {
+                newMapCenter = extent.getCenter(); // polygon & polyline
+              } else {
+                newMapCenter = geometry; // point
+              }
+              this.map.centerAt(newMapCenter); // move to the feature
+              if(shape) shape.moveToFront(); // move the feature to front
+            }
+          }));       	
+        }));
       }));
     },
     
