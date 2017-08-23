@@ -15,7 +15,7 @@ function(declare, BaseWidget,lang, Deferred,
     //please note that this property is be set by the framework when widget is loaded.
     //templateString: template,
 
-    baseClass: 'jimu-widget-ListView',
+    baseClass: 'jimu-widget-listview',
 
     postCreate: function() {
       this.inherited(arguments);

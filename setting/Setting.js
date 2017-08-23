@@ -85,7 +85,7 @@ function(declare, BaseWidgetSetting, lang, array,on, _WidgetsInTemplateMixin, Se
     getConfig: function(){
       //WAB will get config object through this method
       return {
-        configText: this.headerTextNode.value,
+        widgetHeaderText: this.headerTextNode.value,
 		layerId: this.layerSelect.get('value'),
         thumbnailField: this.thumbnailSelect.get('value'),
         titleField: this.titleSelect.get('value')
