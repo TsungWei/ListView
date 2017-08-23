@@ -37,7 +37,7 @@ function(declare, BaseWidgetSetting, lang, array,on, _WidgetsInTemplateMixin, Se
 
     setConfig: function(config){
 	   // Update header text
-      this.headerTextNode.value = config.configText;
+      this.headerTextNode.value = config.widgetHeaderText;
 
 		// Get all feature layers from the map
 		var layerInfosObj = LayerInfos.getInstanceSync();

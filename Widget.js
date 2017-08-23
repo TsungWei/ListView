@@ -2,11 +2,12 @@ define(['dojo/_base/declare',
 'jimu/BaseWidget',
 'dojo/_base/lang',
 'dojo/Deferred',
-'dgrid/OnDemandList',
-'dgrid/Selection',
-"dojo/store/Memory"],
+'dgrid/OnDemandList',//dojo物件
+'dgrid/Selection',//dojo物件
+"dojo/store/Memory",
+"esri/tasks/query"],
 function(declare, BaseWidget,lang, Deferred,
-  OnDemandList, Selection, Memory) {
+  OnDemandList, Selection, Memory,Query) {
   //To create a widget, you need to derive from BaseWidget.
   return declare([BaseWidget], {
     // DemoWidget code goes here
@@ -18,6 +19,7 @@ function(declare, BaseWidget,lang, Deferred,
 
     postCreate: function() {
       this.inherited(arguments);
+      this.headerNode.innerHTML = this.config.widgetHeaderText;
       //載入List
       this.createList();
       console.log('postCreate');
@@ -59,19 +61,32 @@ function(declare, BaseWidget,lang, Deferred,
     
     getDataStore: function() {
       var def = new Deferred();
-      // SAMPLE DATA
-      var SAMPLEDATA = [{
-        'id': 0,
-        'title': 'Feature 1',
-        'thumbnailImg': 'http://placehold.it/120x90'
-      }, {
-        'id': 1,
-        'title': 'Feature 2',
-        'thumbnailImg': 'http://placehold.it/120x90'
-      }];
-      def.resolve(new Memory({
-        data: SAMPLEDATA
-      }));
+      var layer = this.map.getLayer(this.config.layerId);
+      this.featureLayer=layer;
+      // Query features
+      var query = new Query();
+      query.returnGeometry = false;
+      query.outFields = ["*"];
+      query.where = '1=1';
+      layer.queryFeatures(query, lang.hitch(this, function(featureSet) {
+      	
+      	    var featureSetRemapped = [];
+	        for(var index in featureSet.features) {
+	          var feature = featureSet.features[index];
+	          
+	          featureSetRemapped.push({
+	            'id': feature.attributes[this.featureLayer.objectIdField],
+	            'title': feature.attributes[this.config.titleField],
+	            'thumbnailImg': feature.attributes[this.config.thumbnailField]
+	          });
+	        }
+	
+	        def.resolve(new Memory({
+	          data: featureSetRemapped
+	        }));
+        
+	  }));      
+           
       return def;
     },
     
